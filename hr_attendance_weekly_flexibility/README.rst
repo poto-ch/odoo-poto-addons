@@ -16,9 +16,9 @@ Compute attendance overtime solely based on weekly hours
 .. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
-.. |badge3| image:: https://img.shields.io/badge/github-poto--ch%2Fpoto--addons-lightgray.png?logo=github
-    :target: https://github.com/poto-ch/poto-addons/tree/18.0/hr_attendance_weekly_flexibility
-    :alt: poto-ch/poto-addons
+.. |badge3| image:: https://img.shields.io/badge/github-poto--ch%2Fodoo--poto--addons-lightgray.png?logo=github
+    :target: https://github.com/poto-ch/odoo-poto-addons/tree/18.0/hr_attendance_weekly_flexibility
+    :alt: poto-ch/odoo-poto-addons
 
 |badge1| |badge2| |badge3|
 
@@ -37,10 +37,10 @@ work.
 Bug Tracker
 ===========
 
-Bugs are tracked on `GitHub Issues <https://github.com/poto-ch/poto-addons/issues>`_.
+Bugs are tracked on `GitHub Issues <https://github.com/poto-ch/odoo-poto-addons/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-`feedback <https://github.com/poto-ch/poto-addons/issues/new?body=module:%20hr_attendance_weekly_flexibility%0Aversion:%2018.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/poto-ch/odoo-poto-addons/issues/new?body=module:%20hr_attendance_weekly_flexibility%0Aversion:%2018.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -70,6 +70,6 @@ Current maintainer:
 
 |maintainer-OdyX| 
 
-This module is part of the `poto-ch/poto-addons <https://github.com/poto-ch/poto-addons/tree/18.0/hr_attendance_weekly_flexibility>`_ project on GitHub.
+This module is part of the `poto-ch/odoo-poto-addons <https://github.com/poto-ch/odoo-poto-addons/tree/18.0/hr_attendance_weekly_flexibility>`_ project on GitHub.
 
 You are welcome to contribute.
