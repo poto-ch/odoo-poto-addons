@@ -37,49 +37,9 @@ class HrAttendance(models.Model):
         if not custom:
             return super()._update_overtime(employee_attendance_dates)
 
-        _logger.info("Custom _update_overtime()")
-
-        # Collect week boundaries per flexible employee, then fetch all attendances
-        # in a single query
-        flexible_emp_data = {}
-        for emp in list(employee_attendance_dates.keys()):
-            calendar = emp.resource_calendar_id or emp.company_id.resource_calendar_id
-            if (
-                calendar
-                and calendar.flexible_hours
-                and calendar.full_time_required_hours
-            ):
-                employee_tz = pytz.timezone(emp._get_tz())
-                week_starts = set()
-                for attendance_tuple in employee_attendance_dates[emp]:
-                    attendance_date = attendance_tuple[1]
-                    week_starts.add(attendance_date + relativedelta(weekday=MO(-1)))
-
-                if week_starts:
-                    min_week_start = min(week_starts)
-                    max_week_start = max(week_starts)
-                    min_week_start_utc = (
-                        employee_tz.localize(
-                            datetime.combine(min_week_start, datetime.min.time())
-                        )
-                        .astimezone(pytz.utc)
-                        .replace(tzinfo=None)
-                    )
-                    max_week_end_utc = (
-                        employee_tz.localize(
-                            datetime.combine(
-                                max_week_start + relativedelta(weekday=SU(1)),
-                                datetime.max.time(),
-                            )
-                        )
-                        .astimezone(pytz.utc)
-                        .replace(tzinfo=None)
-                    )
-                    flexible_emp_data[emp] = {
-                        "week_starts": week_starts,
-                        "min_utc": min_week_start_utc,
-                        "max_utc": max_week_end_utc,
-                    }
+        flexible_emp_data = self._collect_week_boundaries_per_flexible_employee(
+            employee_attendance_dates
+        )
 
         if flexible_emp_data:
             att_groups = self.env["hr.attendance"]._read_group(
@@ -294,3 +254,50 @@ class HrAttendance(models.Model):
             self._fields["validated_overtime_hours"], to_recompute - validated_modified
         )
         self.env.add_to_compute(self._fields["expected_hours"], to_recompute)
+
+    def _collect_week_boundaries_per_flexible_employee(self, employee_attendance_dates):
+        """
+        Collect week boundaries per flexible employee, then fetch all attendances
+        in a single query
+        """
+        # This is from Odoo 18.0's HrAttendance _update_overtime
+        flexible_emp_data = {}
+        for emp in list(employee_attendance_dates.keys()):
+            calendar = emp.resource_calendar_id or emp.company_id.resource_calendar_id
+            if (
+                calendar
+                and calendar.flexible_hours
+                and calendar.full_time_required_hours
+            ):
+                employee_tz = pytz.timezone(emp._get_tz())
+                week_starts = set()
+                for attendance_tuple in employee_attendance_dates[emp]:
+                    attendance_date = attendance_tuple[1]
+                    week_starts.add(attendance_date + relativedelta(weekday=MO(-1)))
+
+                if week_starts:
+                    min_week_start = min(week_starts)
+                    max_week_start = max(week_starts)
+                    min_week_start_utc = (
+                        employee_tz.localize(
+                            datetime.combine(min_week_start, datetime.min.time())
+                        )
+                        .astimezone(pytz.utc)
+                        .replace(tzinfo=None)
+                    )
+                    max_week_end_utc = (
+                        employee_tz.localize(
+                            datetime.combine(
+                                max_week_start + relativedelta(weekday=SU(1)),
+                                datetime.max.time(),
+                            )
+                        )
+                        .astimezone(pytz.utc)
+                        .replace(tzinfo=None)
+                    )
+                    flexible_emp_data[emp] = {
+                        "week_starts": week_starts,
+                        "min_utc": min_week_start_utc,
+                        "max_utc": max_week_end_utc,
+                    }
+        return flexible_emp_data
