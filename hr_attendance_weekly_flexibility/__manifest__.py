@@ -4,7 +4,7 @@
     "name": "Compute attendance overtime solely based on weekly hours",
     "version": "18.0.0.0.0",
     "author": "Poto services numériques Sàrl, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/hr-attendance",
+    "website": "https://sources.poto.ch/odoo/poto-addons",
     "license": "AGPL-3",
     "category": "Human Resources",
     "depends": ["hr_attendance"],

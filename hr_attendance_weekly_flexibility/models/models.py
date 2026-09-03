@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # from odoo import models, fields, api
 
 
@@ -16,4 +14,3 @@
 #     def _value_pc(self):
 #         for record in self:
 #             record.value2 = float(record.value) / 100
-
