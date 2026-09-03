@@ -20,7 +20,7 @@ _logger = logging.getLogger(__name__)
 class ResourceCalendar(models.Model):
     _inherit = "resource.calendar"
 
-    ignore_hours_per_day = fields.Boolean()
+    required_hours_are_weekly = fields.Boolean()
 
     def _attendance_intervals_batch(
         self, start_dt, end_dt, resources=None, domain=None, tz=None, lunch=False
@@ -28,11 +28,11 @@ class ResourceCalendar(models.Model):
         """
         Override to ignore hours per day completely
         """
-        if not self.ignore_hours_per_day or not self.flexible_hours:
+        if not self.required_hours_are_weekly or not self.flexible_hours:
             return super()._attendance_intervals_batch(
                 start_dt, end_dt, resources, domain, tz, lunch
             )
-        assert self.ignore_hours_per_day and self.flexible_hours
+        assert self.required_hours_are_weekly and self.flexible_hours
 
         # From here, this is a reduxed version of _attendance_intervals_batch from
         # odoo.addons.resource.models.resource_calendar ResourceCalendar's

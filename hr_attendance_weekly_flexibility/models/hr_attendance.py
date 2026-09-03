@@ -31,7 +31,7 @@ class HrAttendance(models.Model):
         custom = False
         for emp in list(employee_attendance_dates.keys()):
             calendar = emp.resource_calendar_id or emp.company_id.resource_calendar_id
-            if calendar.ignore_hours_per_day:
+            if calendar.required_hours_are_weekly:
                 custom = True
                 break
         if not custom:
@@ -173,7 +173,7 @@ class HrAttendance(models.Model):
                 )
             )
 
-            assert bool(calendar and calendar.ignore_hours_per_day)
+            assert bool(calendar and calendar.required_hours_are_weekly)
 
             # Loop through each day of attendances, and compute the day over/undertime.
             for day_data in sorted(attendance_dates, key=lambda x: x[1]):
@@ -187,7 +187,7 @@ class HrAttendance(models.Model):
                 # attendances.
 
                 if not unfinished_shifts and attendances:
-                    assert calendar.ignore_hours_per_day
+                    assert calendar.required_hours_are_weekly
 
                     hours_today = sum(attendances.mapped("worked_hours"))
                     today_working_times = working_times.get(attendance_date)

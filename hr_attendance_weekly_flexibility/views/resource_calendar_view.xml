@@ -6,10 +6,13 @@
         <field name="inherit_id" ref="resource.resource_calendar_form" />
         <field name="arch" type="xml">
             <xpath expr="//group[@name='resource_working_hours']" position="inside">
-                <field name="ignore_hours_per_day" invisible="not flexible_hours" />
+                <field
+                    name="required_hours_are_weekly"
+                    invisible="not flexible_hours"
+                />
             </xpath>
             <xpath expr="//field[@name='hours_per_day']" position="attributes">
-                <attribute name="invisible">ignore_hours_per_day</attribute>
+                <attribute name="invisible">required_hours_are_weekly</attribute>
             </xpath>
         </field>
     </record>
