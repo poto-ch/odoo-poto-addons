@@ -7,8 +7,10 @@
     "website": "https://sources.poto.ch/odoo/poto-addons",
     "license": "AGPL-3",
     "category": "Human Resources",
-    "depends": ["hr_attendance"],
-    "data": [],
+    "depends": ["resource"],
+    "data": [
+        "views/resource_calendar_view.xml",
+    ],
     "installable": True,
     "maintainers": ["OdyX"],
 }
