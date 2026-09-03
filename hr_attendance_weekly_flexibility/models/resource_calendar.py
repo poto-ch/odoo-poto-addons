@@ -10,6 +10,7 @@ from pytz import timezone, utc
 
 from odoo import fields, models
 from odoo.osv import expression
+from odoo.tools.float_utils import float_round
 
 from odoo.addons.hr_work_entry_contract.models.hr_work_intervals import WorkIntervals
 
@@ -99,7 +100,9 @@ class ResourceCalendar(models.Model):
                 full_time_required_hours = calendar.full_time_required_hours
                 # That's where this differs: this allows to consume all hours by friday,
                 # ignoring the hours_per_day completely
-                max_hours_per_day = calendar.full_time_required_hours / 5.0
+                max_hours_per_day = float_round(
+                    calendar.full_time_required_hours / float(5), precision_digits=2
+                )
 
                 intervals = []
                 # This is the running counter always set at mondays
@@ -157,11 +160,6 @@ class ResourceCalendar(models.Model):
                                 "duration_days": 1,
                             }
                         )
-                        _logger.warning(
-                            f"{current_day.date()}: expected attendance is of "
-                            f"{allocate_hours}h"
-                        )
-
                         intervals.append((start_time, end_time, dummy_attendance))
 
                         current_day += timedelta(days=1)
