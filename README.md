@@ -17,7 +17,11 @@ Odoo addons developped by Poto
 
 [//]: # (addons)
 
-This part will be replaced when running the oca-gen-addons-table script from OCA/maintainer-tools.
+Available addons
+----------------
+addon | version | maintainers | summary
+--- | --- | --- | ---
+[hr_attendance_weekly_flexibility](hr_attendance_weekly_flexibility/) | 18.0.0.0.0 | <a href='https://github.com/OdyX'><img src='https://github.com/OdyX.png' width='32' height='32' style='border-radius:50%;' alt='OdyX'/></a> | Compute attendance overtime solely based on weekly hours
 
 [//]: # (end addons)
 
