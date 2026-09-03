@@ -18,6 +18,10 @@ class HrAttendance(models.Model):
     _inherit = "hr.attendance"
 
     def _update_overtime(self, employee_attendance_dates=None):  # noqa: C901
+        """
+        This is mostly a copy from hr.attendance _update_overtime as there's no other
+        neat way to do this (yet?)
+        """
         if employee_attendance_dates is None:
             employee_attendance_dates = self._get_attendances_dates()
         employee_attendance_dates = {
