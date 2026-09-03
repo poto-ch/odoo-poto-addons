@@ -20,7 +20,13 @@ _logger = logging.getLogger(__name__)
 class ResourceCalendar(models.Model):
     _inherit = "resource.calendar"
 
-    required_hours_are_weekly = fields.Boolean()
+    required_hours_are_weekly = fields.Boolean(
+        "Required hours apply weekly",
+        default=False,
+        help="If set, the average daily hours' setting is ignored "
+        "in favour of required hours per week. This allows "
+        "employees to register attendance at anytime.",
+    )
 
     def _attendance_intervals_batch(
         self, start_dt, end_dt, resources=None, domain=None, tz=None, lunch=False
