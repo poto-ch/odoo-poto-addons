@@ -1,0 +1,2 @@
+- Poto services numériques Sàrl (https://poto.ch):
+  - Didier 'OdyX' Raboud \<odyx+odoo@poto.ch\>
