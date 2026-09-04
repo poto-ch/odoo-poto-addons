@@ -151,7 +151,6 @@ class HrAttendance(models.Model):
             # Loop through each day of attendances, and compute the day over/undertime.
             for day_data in sorted(attendance_dates, key=lambda x: x[1]):
                 attendance_date = day_data[1]
-                _logger.debug(attendance_date)
 
                 attendances = attendances_per_day.get(attendance_date, self.browse())
                 unfinished_shifts = attendances.filtered(lambda a: not a.check_out)
@@ -170,11 +169,6 @@ class HrAttendance(models.Model):
                         ).total_seconds() / 3600
                     except TypeError:
                         due_hours_today = 0.0
-
-                    _logger.debug(
-                        f"Hours: {round(hours_today, 2)} | "
-                        f"Due: {round(due_hours_today, 2)}"
-                    )
 
                     # Find the last attendance before this day
                     # latest day with attendances, or start day of the contract
@@ -200,23 +194,20 @@ class HrAttendance(models.Model):
                     }
 
                     # That amount of work was not done
-                    missed_working_time = sum(
-                        [wt[0][1] - wt[0][0] for wt in working_times_since.values()],
-                        timedelta(),
+                    missed_working_hours = (
+                        sum(
+                            [
+                                wt[0][1] - wt[0][0]
+                                for wt in working_times_since.values()
+                            ],
+                            timedelta(),
+                        ).total_seconds()
+                        / 3600
                     )
-
-                    if missed_working_time > timedelta():
-                        _logger.debug(
-                            f"No work since {latest_missed_day}, missed "
-                            f"{round(missed_working_time.total_seconds() / 3600, 2)} "
-                            "hours"
-                        )
 
                     # Overtime is:
                     overtime_duration = (
-                        hours_today
-                        - due_hours_today
-                        - (missed_working_time.total_seconds() / 3600)
+                        hours_today - due_hours_today - (missed_working_hours)
                     )
                     overtime_duration_real = overtime_duration
 
@@ -224,7 +215,9 @@ class HrAttendance(models.Model):
                         f"{attendance_date}   "
                         f"due : {due_hours_today}   "
                         f"done: {round(hours_today, 2)}   "
-                        f"over: ({round(overtime_duration_real, 2)})"
+                        "over: "
+                        f"({round(hours_today - due_hours_today, 2)} - "
+                        f"{missed_working_hours}) = {round(overtime_duration_real, 2)}"
                     )
 
                 overtime = overtimes.filtered(
