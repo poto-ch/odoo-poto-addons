@@ -1,0 +1,1 @@
+* As over/undertime is only attached to attendance records, any due worktime is only accounted for on further attendances.

@@ -20,8 +20,8 @@ postgres_image: ''
 rebel_module_groups: []
 repo_description: Odoo addons developped by Poto
 repo_name: Attendance addons
-repo_slug: poto-addons
-repo_website: https://sources.poto.ch/odoo/poto-addons
+repo_slug: odoo-poto-addons
+repo_website: https://github.com/poto-ch/odoo-poto-addons
 use_pyproject_toml: true
 use_ruff: true
 
