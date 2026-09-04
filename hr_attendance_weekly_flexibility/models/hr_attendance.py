@@ -12,6 +12,7 @@ from odoo.osv.expression import AND, OR
 from odoo.tools.float_utils import float_compare, float_is_zero
 
 _logger = logging.getLogger(__name__)
+_logger.setLevel(logging.ERROR)
 
 
 class HrAttendance(models.Model):
@@ -100,7 +101,9 @@ class HrAttendance(models.Model):
 
             # Attendances per LOCAL day
             attendances_per_day = defaultdict(lambda: self.env["hr.attendance"])
-            all_attendances = self.env["hr.attendance"].search(attendance_domain)
+            all_attendances = self.env["hr.attendance"].search(
+                attendance_domain, order="check_in ASC"
+            )
             for attendance in all_attendances:
                 check_in_day_start = attendance._get_day_start_and_day(
                     attendance.employee_id, attendance.check_in
@@ -148,6 +151,8 @@ class HrAttendance(models.Model):
             # Loop through each day of attendances, and compute the day over/undertime.
             for day_data in sorted(attendance_dates, key=lambda x: x[1]):
                 attendance_date = day_data[1]
+                _logger.debug(attendance_date)
+
                 attendances = attendances_per_day.get(attendance_date, self.browse())
                 unfinished_shifts = attendances.filtered(lambda a: not a.check_out)
                 overtime_duration = 0
@@ -157,8 +162,6 @@ class HrAttendance(models.Model):
                 # attendances.
 
                 if not unfinished_shifts and attendances:
-                    assert calendar.required_hours_are_weekly
-
                     hours_today = sum(attendances.mapped("worked_hours"))
                     today_working_times = working_times.get(attendance_date)
                     try:
@@ -168,33 +171,46 @@ class HrAttendance(models.Model):
                     except TypeError:
                         due_hours_today = 0.0
 
+                    _logger.debug(
+                        f"Hours: {round(hours_today, 2)} | "
+                        f"Due: {round(due_hours_today, 2)}"
+                    )
+
                     # Find the last attendance before this day
+                    # latest day with attendances, or start day of the contract
+                    # So: there was no work in the days between
+                    earlier_days = [
+                        day
+                        for day in attendances_per_day.keys()
+                        if day < attendance_date
+                    ]
+
                     try:
-                        # latest day with attendances.
-                        # So: tere was no work in the days between
-                        latest_attended_day = max(
-                            [
-                                day
-                                for day in attendances_per_day.keys()
-                                if day < attendance_date
-                            ]
-                        )
-                        # Which working days were concerned
-                        working_times_since = {
-                            day: wt
-                            for day, wt in working_times.items()
-                            if day < attendance_date and day > latest_attended_day
-                        }
-                        # That amount of work was not done
-                        missed_working_time = sum(
-                            [
-                                wt[0][1] - wt[0][0]
-                                for wt in working_times_since.values()
-                            ],
-                            timedelta(),
-                        )
+                        latest_missed_day = max(earlier_days) + timedelta(days=1)
                     except ValueError:
-                        missed_working_time = timedelta()
+                        # There was no earlier attendance, the work should have
+                        # happened since contract start
+                        latest_missed_day = start.date()
+
+                    # Which working days were concerned
+                    working_times_since = {
+                        day: wt
+                        for day, wt in working_times.items()
+                        if day < attendance_date and day >= latest_missed_day
+                    }
+
+                    # That amount of work was not done
+                    missed_working_time = sum(
+                        [wt[0][1] - wt[0][0] for wt in working_times_since.values()],
+                        timedelta(),
+                    )
+
+                    if missed_working_time > timedelta():
+                        _logger.debug(
+                            f"No work since {latest_missed_day}, missed "
+                            f"{round(missed_working_time.total_seconds() / 3600, 2)} "
+                            "hours"
+                        )
 
                     # Overtime is:
                     overtime_duration = (
@@ -204,11 +220,11 @@ class HrAttendance(models.Model):
                     )
                     overtime_duration_real = overtime_duration
 
-                    _logger.warning(
+                    _logger.debug(
                         f"{attendance_date}   "
-                        f"{due_hours_today}   "
-                        f"{round(hours_today, 2)}   "
-                        f"({round(overtime_duration_real, 2)})"
+                        f"due : {due_hours_today}   "
+                        f"done: {round(hours_today, 2)}   "
+                        f"over: ({round(overtime_duration_real, 2)})"
                     )
 
                 overtime = overtimes.filtered(
