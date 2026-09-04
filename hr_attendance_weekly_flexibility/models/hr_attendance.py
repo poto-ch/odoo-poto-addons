@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from operator import itemgetter
 
 import pytz
@@ -109,7 +109,13 @@ class HrAttendance(models.Model):
 
             # As _attendance_intervals_batch and _leave_intervals_batch both take
             # localized dates we need to localize those date
-            start = pytz.utc.localize(min(attendance_dates, key=itemgetter(0))[0])
+            # Make sure to use the start of the contract, not the earliest attendance
+            start = pytz.utc.localize(
+                datetime.combine(
+                    emp.contract_id.date_start,
+                    time(0, 0),
+                )
+            )
             stop = pytz.utc.localize(
                 max(attendance_dates, key=itemgetter(0))[0] + timedelta(hours=24)
             )
