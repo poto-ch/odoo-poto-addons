@@ -4,7 +4,7 @@ from datetime import datetime, time, timedelta
 from operator import itemgetter
 
 import pytz
-from dateutil.relativedelta import MO, SU, relativedelta
+from dateutil.relativedelta import MO, relativedelta
 
 from odoo import models
 from odoo.osv import expression
@@ -42,40 +42,24 @@ class HrAttendance(models.Model):
         if not custom:
             return super()._update_overtime(employee_attendance_dates)
 
-        flexible_emp_data = self._collect_week_boundaries_per_flexible_employee(
-            employee_attendance_dates
-        )
-
-        if flexible_emp_data:
-            att_groups = self.env["hr.attendance"]._read_group(
+        # Alse examine attendances from the current week
+        days_to_add = set()
+        for emp, attendance_dates in employee_attendance_dates.items():
+            first_in_batch = min(attendance_dates)[1]
+            monday = first_in_batch + relativedelta(weekday=MO(-1))
+            for att in self.env["hr.attendance"].search(
                 domain=[
-                    ("employee_id", "in", [emp.id for emp in flexible_emp_data]),
-                    (
-                        "check_in",
-                        ">=",
-                        min(d["min_utc"] for d in flexible_emp_data.values()),
-                    ),
-                    (
-                        "check_in",
-                        "<=",
-                        max(d["max_utc"] for d in flexible_emp_data.values()),
-                    ),
+                    ("employee_id", "=", emp.id),
+                    ("check_in", ">=", monday),
+                    ("check_in", "<", first_in_batch),
                 ],
-                groupby=["employee_id"],
-                aggregates=["id:recordset"],
-            )
-            att_by_emp = dict(att_groups)
+            ):
+                previous_day_tuple = att._get_day_start_and_day(emp, att.check_in)
+                days_to_add.add(previous_day_tuple)
 
-            for emp, emp_data in flexible_emp_data.items():
-                week_dates_to_add = set()
-                for att in att_by_emp.get(emp, self.browse()):
-                    day_start_tuple = att._get_day_start_and_day(emp, att.check_in)
-                    week_start = day_start_tuple[1] + relativedelta(weekday=MO(-1))
-                    if week_start in emp_data["week_starts"]:
-                        week_dates_to_add.add(day_start_tuple)
-                expanded_attendance_dates[emp] = (
-                    expanded_attendance_dates.get(emp, set()) | week_dates_to_add
-                )
+            expanded_attendance_dates[emp] = (
+                expanded_attendance_dates.get(emp, set()) | days_to_add
+            )
 
         employee_attendance_dates = expanded_attendance_dates
 
@@ -163,6 +147,9 @@ class HrAttendance(models.Model):
                 if not unfinished_shifts and attendances:
                     hours_today = sum(attendances.mapped("worked_hours"))
                     today_working_times = working_times.get(attendance_date)
+                    missed_working_hours = 0.0
+                    latest_missed_day = None
+
                     try:
                         due_hours_today = (
                             today_working_times[0][1] - today_working_times[0][0]
@@ -170,55 +157,63 @@ class HrAttendance(models.Model):
                     except TypeError:
                         due_hours_today = 0.0
 
-                    # Find the last attendance before this day
-                    # latest day with attendances, or start day of the contract
-                    # So: there was no work in the days between
+                    # Find the last attendance before this day in the batch
                     earlier_days = [
                         day
                         for day in attendances_per_day.keys()
                         if day < attendance_date
                     ]
 
-                    try:
+                    if earlier_days:
                         latest_missed_day = max(earlier_days) + timedelta(days=1)
-                    except ValueError:
+                    elif not (
+                        self.env["hr.attendance"].search_count(
+                            domain=[
+                                ("employee_id", "=", emp.id),
+                                ("check_in", "<", attendance_date),
+                                ("check_in", ">=", start.date()),
+                            ]
+                        )
+                    ):
                         # There was no earlier attendance, the work should have
                         # happened since contract start
                         latest_missed_day = start.date()
 
-                    # Which working days were concerned
-                    working_times_since = {
-                        day: wt
-                        for day, wt in working_times.items()
-                        if day < attendance_date and day >= latest_missed_day
-                    }
+                    if latest_missed_day:
+                        # Which working days were concerned
+                        working_times_since = {
+                            day: wt
+                            for day, wt in working_times.items()
+                            if day < attendance_date and day >= latest_missed_day
+                        }
 
-                    # That amount of work was not done
-                    missed_working_hours = (
-                        sum(
-                            [
-                                wt[0][1] - wt[0][0]
-                                for wt in working_times_since.values()
-                            ],
-                            timedelta(),
-                        ).total_seconds()
-                        / 3600
-                    )
+                        # That amount of work was not done
+                        missed_working_hours = (
+                            sum(
+                                [
+                                    wt[0][1] - wt[0][0]
+                                    for wt in working_times_since.values()
+                                ],
+                                timedelta(),
+                            ).total_seconds()
+                            / 3600
+                        )
 
-                    # Overtime is:
-                    overtime_duration = (
-                        hours_today - due_hours_today - (missed_working_hours)
-                    )
-                    overtime_duration_real = overtime_duration
+                        # Overtime is:
+                        overtime_duration = (
+                            hours_today - due_hours_today - (missed_working_hours)
+                        )
+                        overtime_duration_real = overtime_duration
 
-                    _logger.debug(
-                        f"{attendance_date}   "
-                        f"due : {due_hours_today}   "
-                        f"done: {round(hours_today, 2)}   "
-                        "over: "
-                        f"({round(hours_today - due_hours_today, 2)} - "
-                        f"{missed_working_hours}) = {round(overtime_duration_real, 2)}"
-                    )
+                        _logger.debug(
+                            f"{attendance_date}   "
+                            f"due : {due_hours_today}   "
+                            f"done: {round(hours_today, 2)}   "
+                            "over: "
+                            f"({round(hours_today - due_hours_today, 2)} - "
+                            f"{missed_working_hours}) = "
+                            f"{round(overtime_duration_real, 2)}"
+                        )
 
                 overtime = overtimes.filtered(
                     lambda o, attendance_date=attendance_date: o.date == attendance_date
@@ -273,50 +268,3 @@ class HrAttendance(models.Model):
             self._fields["validated_overtime_hours"], to_recompute - validated_modified
         )
         self.env.add_to_compute(self._fields["expected_hours"], to_recompute)
-
-    def _collect_week_boundaries_per_flexible_employee(self, employee_attendance_dates):
-        """
-        Collect week boundaries per flexible employee, then fetch all attendances
-        in a single query
-        """
-        # This is from Odoo 18.0's HrAttendance _update_overtime
-        flexible_emp_data = {}
-        for emp in list(employee_attendance_dates.keys()):
-            calendar = emp.resource_calendar_id or emp.company_id.resource_calendar_id
-            if (
-                calendar
-                and calendar.flexible_hours
-                and calendar.full_time_required_hours
-            ):
-                employee_tz = pytz.timezone(emp._get_tz())
-                week_starts = set()
-                for attendance_tuple in employee_attendance_dates[emp]:
-                    attendance_date = attendance_tuple[1]
-                    week_starts.add(attendance_date + relativedelta(weekday=MO(-1)))
-
-                if week_starts:
-                    min_week_start = min(week_starts)
-                    max_week_start = max(week_starts)
-                    min_week_start_utc = (
-                        employee_tz.localize(
-                            datetime.combine(min_week_start, datetime.min.time())
-                        )
-                        .astimezone(pytz.utc)
-                        .replace(tzinfo=None)
-                    )
-                    max_week_end_utc = (
-                        employee_tz.localize(
-                            datetime.combine(
-                                max_week_start + relativedelta(weekday=SU(1)),
-                                datetime.max.time(),
-                            )
-                        )
-                        .astimezone(pytz.utc)
-                        .replace(tzinfo=None)
-                    )
-                    flexible_emp_data[emp] = {
-                        "week_starts": week_starts,
-                        "min_utc": min_week_start_utc,
-                        "max_utc": max_week_end_utc,
-                    }
-        return flexible_emp_data
