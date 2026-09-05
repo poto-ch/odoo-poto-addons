@@ -46,18 +46,27 @@ class HrAttendance(models.Model):
         days_to_add = set()
         for emp, attendance_dates in employee_attendance_dates.items():
             first_in_batch = min(attendance_dates)[1]
-            monday = (
-                first_in_batch + relativedelta(weekday=TU(-1)) + relativedelta(days=-1)
-            )
+            monday_before_latest = None
+            # Find the latest attendance before the first, bump to its earliest monday
             for att in self.env["hr.attendance"].search(
                 domain=[
                     ("employee_id", "=", emp.id),
-                    ("check_in", ">=", monday),
                     ("check_in", "<", first_in_batch),
                 ],
+                order="check_in DESC",
             ):
+                if not monday_before_latest:
+                    latest_before_batch = att.check_in.date()
+                    monday_before_latest = (
+                        latest_before_batch
+                        + relativedelta(weekday=TU(-1))
+                        + relativedelta(days=-1)
+                    )
                 previous_day_tuple = att._get_day_start_and_day(emp, att.check_in)
                 days_to_add.add(previous_day_tuple)
+
+                if monday_before_latest and att.check_in.date() < monday_before_latest:
+                    break
 
             expanded_attendance_dates[emp] = (
                 expanded_attendance_dates.get(emp, set()) | days_to_add
@@ -165,12 +174,14 @@ class HrAttendance(models.Model):
                     ):
                         # There was no earlier attendance, the work should have
                         # happened since contract start.
-                        latest_missed_day = pytz.utc.localize(
+                        latest_missed_daytime = pytz.utc.localize(
                             datetime.combine(
                                 emp.contract_id.date_start,
                                 time(0, 0),
                             )
-                        ).date()
+                        )
+
+                        latest_missed_day = latest_missed_daytime.date()
 
                         _logger.debug(
                             "No earlier attendance, so check from contract start "
@@ -178,7 +189,7 @@ class HrAttendance(models.Model):
                         )
                         # Now refetch
                         working_times = self._get_working_times(
-                            emp, latest_missed_day, stop
+                            emp, latest_missed_daytime, stop
                         )
 
                     if latest_missed_day:
