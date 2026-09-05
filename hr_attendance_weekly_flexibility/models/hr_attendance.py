@@ -4,7 +4,7 @@ from datetime import datetime, time, timedelta
 from operator import itemgetter
 
 import pytz
-from dateutil.relativedelta import MO, relativedelta
+from dateutil.relativedelta import TU, relativedelta
 
 from odoo import models
 from odoo.osv import expression
@@ -46,7 +46,9 @@ class HrAttendance(models.Model):
         days_to_add = set()
         for emp, attendance_dates in employee_attendance_dates.items():
             first_in_batch = min(attendance_dates)[1]
-            monday = first_in_batch + relativedelta(weekday=MO(-1))
+            monday = (
+                first_in_batch + relativedelta(weekday=TU(-1)) + relativedelta(days=-1)
+            )
             for att in self.env["hr.attendance"].search(
                 domain=[
                     ("employee_id", "=", emp.id),
