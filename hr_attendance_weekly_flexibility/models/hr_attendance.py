@@ -98,28 +98,14 @@ class HrAttendance(models.Model):
 
             # As _attendance_intervals_batch and _leave_intervals_batch both take
             # localized dates we need to localize those date
-            # Make sure to use the start of the contract, not the earliest attendance
-            start = pytz.utc.localize(
-                datetime.combine(
-                    emp.contract_id.date_start,
-                    time(0, 0),
-                )
-            )
+            start = pytz.utc.localize(min(attendance_dates, key=itemgetter(0))[0])
             stop = pytz.utc.localize(
                 max(attendance_dates, key=itemgetter(0))[0] + timedelta(hours=24)
             )
 
             # Retrieve expected attendance intervals
             calendar = emp.resource_calendar_id or emp.company_id.resource_calendar_id
-            expected_attendances = emp._employee_attendance_intervals(start, stop)
-
-            # working_times = {date: [(start, stop)]}
-            working_times = defaultdict(lambda: [])
-            for expected_attendance in expected_attendances:
-                # Exclude resource.calendar.attendance
-                working_times[expected_attendance[0].date()].append(
-                    expected_attendance[:2]
-                )
+            working_times = self._get_working_times(emp, start, stop)
 
             overtimes = (
                 self.env["hr.attendance.overtime"]
@@ -178,8 +164,22 @@ class HrAttendance(models.Model):
                         )
                     ):
                         # There was no earlier attendance, the work should have
-                        # happened since contract start
-                        latest_missed_day = start.date()
+                        # happened since contract start.
+                        latest_missed_day = pytz.utc.localize(
+                            datetime.combine(
+                                emp.contract_id.date_start,
+                                time(0, 0),
+                            )
+                        ).date()
+
+                        _logger.debug(
+                            "No earlier attendance, so check from contract start "
+                            f"{latest_missed_day}"
+                        )
+                        # Now refetch
+                        working_times = self._get_working_times(
+                            emp, latest_missed_day, stop
+                        )
 
                     if latest_missed_day:
                         # Which working days were concerned
@@ -270,3 +270,16 @@ class HrAttendance(models.Model):
             self._fields["validated_overtime_hours"], to_recompute - validated_modified
         )
         self.env.add_to_compute(self._fields["expected_hours"], to_recompute)
+
+    def _get_working_times(self, emp, start, stop):
+        """
+        Get "due" working times for employee in a dates' interval
+        """
+        expected_attendances = emp._employee_attendance_intervals(start, stop)
+
+        # working_times = {date: [(start, stop)]}
+        working_times = defaultdict(lambda: [])
+        for expected_attendance in expected_attendances:
+            # Exclude resource.calendar.attendance
+            working_times[expected_attendance[0].date()].append(expected_attendance[:2])
+        return working_times

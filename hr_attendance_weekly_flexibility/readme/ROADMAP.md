@@ -1,2 +1,2 @@
 * As over/undertime is only attached to attendance records, any due worktime is only accounted for on further attendances. This means that over/under hours clocked in a given week might only be accounted for on the next monday's attendances.
-* Most probably quite inefficient database-wise. Specifically, the whole calendar's due dates since contract start is loaded when computing overtime.
+* Likely quite inefficient database-wise.
