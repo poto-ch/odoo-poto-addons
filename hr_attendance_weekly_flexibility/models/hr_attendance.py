@@ -45,28 +45,56 @@ class HrAttendance(models.Model):
         # Alse examine attendances from the current week
         days_to_add = set()
         for emp, attendance_dates in employee_attendance_dates.items():
-            first_in_batch = min(attendance_dates)[1]
-            monday_before_latest = None
             # Find the latest attendance before the first, bump to its earliest monday
+            first_in_batch = min(attendance_dates)[1]
+
+            # Get localized earliest attendance as datetime. Covers the case where the
+            # current attendance record is at employee's 00:00
+            earliest_datetime_in_batch = self._get_utc_start_of_day(
+                emp, first_in_batch
+            ).replace(tzinfo=None)
+
+            latest_attendance_before_batch = self.env["hr.attendance"].search(
+                domain=[
+                    ("employee_id", "=", emp.id),
+                    (
+                        "check_in",
+                        "<",
+                        earliest_datetime_in_batch,
+                    ),
+                ],
+                order="check_in DESC",
+                limit=1,
+            )
+            if not latest_attendance_before_batch:
+                # Handling the first attendance ever, don't add anything
+                break
+
+            latest_attended_day = self._get_utc_start_of_day(
+                emp, latest_attendance_before_batch.check_in
+            ).replace(tzinfo=None)
+
+            _logger.debug(f"{latest_attended_day}: Latest attendance before the batch")
+            # Bump to earliest monday minus one (so bump a week back from a monday)
+            monday_before_latest = (
+                latest_attended_day
+                + relativedelta(weekday=TU(-1))
+                + relativedelta(days=-1)
+            )
+
+            _logger.debug(f"{monday_before_latest}: Earlier monday")
+
+            # Find all attendances between the monday and now.
+            # There must be at least one
             for att in self.env["hr.attendance"].search(
                 domain=[
                     ("employee_id", "=", emp.id),
-                    ("check_in", "<", first_in_batch),
-                ],
-                order="check_in DESC",
+                    ("check_in", "<", earliest_datetime_in_batch),
+                    ("check_in", ">=", monday_before_latest),
+                ]
             ):
-                if not monday_before_latest:
-                    latest_before_batch = att.check_in.date()
-                    monday_before_latest = (
-                        latest_before_batch
-                        + relativedelta(weekday=TU(-1))
-                        + relativedelta(days=-1)
-                    )
                 previous_day_tuple = att._get_day_start_and_day(emp, att.check_in)
                 days_to_add.add(previous_day_tuple)
-
-                if monday_before_latest and att.check_in.date() < monday_before_latest:
-                    break
 
             expanded_attendance_dates[emp] = (
                 expanded_attendance_dates.get(emp, set()) | days_to_add
@@ -129,6 +157,10 @@ class HrAttendance(models.Model):
 
             assert bool(calendar and calendar.required_hours_are_weekly)
 
+            emp_contract_start = self._get_utc_start_of_day(
+                emp, emp.contract_id.date_start
+            )
+
             # Loop through each day of attendances, and compute the day over/undertime.
             for day_data in sorted(attendance_dates, key=lambda x: x[1]):
                 attendance_date = day_data[1]
@@ -150,7 +182,7 @@ class HrAttendance(models.Model):
                     try:
                         due_hours_today = (
                             today_working_times[0][1] - today_working_times[0][0]
-                        ).total_seconds() / 3600
+                        ).total_seconds() / 3600.0
                     except TypeError:
                         due_hours_today = 0.0
 
@@ -163,24 +195,18 @@ class HrAttendance(models.Model):
 
                     if earlier_days:
                         latest_missed_day = max(earlier_days) + timedelta(days=1)
-                    elif not (
+                    elif (
                         self.env["hr.attendance"].search_count(
                             domain=[
                                 ("employee_id", "=", emp.id),
                                 ("check_in", "<", attendance_date),
-                                ("check_in", ">=", start.date()),
+                                ("check_in", ">=", emp_contract_start),
                             ]
                         )
-                    ):
+                    ) == 0:
                         # There was no earlier attendance, the work should have
                         # happened since contract start.
-                        latest_missed_daytime = pytz.utc.localize(
-                            datetime.combine(
-                                emp.contract_id.date_start,
-                                time(0, 0),
-                            )
-                        )
-
+                        latest_missed_daytime = emp_contract_start
                         latest_missed_day = latest_missed_daytime.date()
 
                         _logger.debug(
@@ -209,7 +235,7 @@ class HrAttendance(models.Model):
                                 ],
                                 timedelta(),
                             ).total_seconds()
-                            / 3600
+                            / 3600.0
                         )
 
                         # Overtime is:
@@ -294,3 +320,11 @@ class HrAttendance(models.Model):
             # Exclude resource.calendar.attendance
             working_times[expected_attendance[0].date()].append(expected_attendance[:2])
         return working_times
+
+    def _get_utc_start_of_day(self, emp, dt):
+        """
+        Get the start of day from the employees' perspective
+        """
+        return (
+            pytz.timezone(emp._get_tz()).localize(datetime.combine(dt, time(0, 0)))
+        ).astimezone(pytz.utc)
