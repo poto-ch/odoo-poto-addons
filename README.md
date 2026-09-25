@@ -21,6 +21,7 @@ Available addons
 ----------------
 addon | version | maintainers | summary
 --- | --- | --- | ---
+[account_financial_report_counterparts](account_financial_report_counterparts/) | 18.0.0.0.0 | <a href='https://github.com/OdyX'><img src='https://github.com/OdyX.png' width='32' height='32' style='border-radius:50%;' alt='OdyX'/></a> | Account Financial Reports - Display counterparts
 [hr_attendance_weekly_flexibility](hr_attendance_weekly_flexibility/) | 18.0.0.1.0 | <a href='https://github.com/OdyX'><img src='https://github.com/OdyX.png' width='32' height='32' style='border-radius:50%;' alt='OdyX'/></a> | Compute attendance overtime solely based on weekly hours
 [hr_timesheet_table_rounded](hr_timesheet_table_rounded/) | 18.0.0.0.0 | <a href='https://github.com/OdyX'><img src='https://github.com/OdyX.png' width='32' height='32' style='border-radius:50%;' alt='OdyX'/></a> | Always display rounded times for timesheets
 [portal_timesheets_rounded](portal_timesheets_rounded/) | 18.0.0.0.0 | <a href='https://github.com/OdyX'><img src='https://github.com/OdyX.png' width='32' height='32' style='border-radius:50%;' alt='OdyX'/></a> | Display rounded times for timesheets in portal

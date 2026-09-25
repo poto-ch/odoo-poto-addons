@@ -1,0 +1,1 @@
+Replace account with counterpart accounts in General Ledger reports.

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="report_general_ledger_lines_counterpart">
+        <field name="name">report_general_ledger_lines_counterpart</field>
+        <field
+            name="inherit_id"
+            ref="account_financial_report.report_general_ledger_lines"
+        />
+        <field name="arch" type="xml">
+            <!-- Update the column header-->
+
+            <!-- oca-hooks:disable=xml-view-dangerous-replace-low-priority -->
+            <xpath
+                expr="//div[hasclass('act_as_table')]/div[hasclass('act_as_thead')]/div[hasclass('act_as_row')]/div[hasclass('act_as_cell')][4]"
+                position="replace"
+            >
+                <div class="act_as_cell" style="width: 4.75%;">CC</div>
+            </xpath>
+            <xpath
+                expr="//div[hasclass('act_as_table')]/t[@t-as='line']/div[hasclass('act_as_row')]/div[hasclass('act_as_cell')][4]"
+                position="replace"
+            >
+                <div class="act_as_cell left">
+                    <span t-att-res-id="line['id']" res-model="account.move.line">
+                        <t
+                            t-foreach="line['counterpart_account_codes'].split('|')"
+                            t-as="code"
+                        >
+                            <t t-out="code" />
+                            <br t-if="code_index != 1" />
+                        </t>
+                    </span>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

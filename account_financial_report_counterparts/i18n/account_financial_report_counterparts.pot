@@ -1,0 +1,42 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_financial_report_counterparts
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-25 15:16+0000\n"
+"PO-Revision-Date: 2026-09-25 15:16+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: account_financial_report_counterparts
+#: model_terms:ir.ui.view,arch_db:account_financial_report_counterparts.report_general_ledger_lines_counterpart
+msgid "CC"
+msgstr ""
+
+#. module: account_financial_report_counterparts
+#: model:ir.model.fields,field_description:account_financial_report_counterparts.field_account_move_line__counterpart_account_codes
+msgid "Counterpart Account codes"
+msgstr ""
+
+#. module: account_financial_report_counterparts
+#: model:ir.model,name:account_financial_report_counterparts.model_report_account_financial_report_general_ledger
+msgid "General Ledger Report"
+msgstr ""
+
+#. module: account_financial_report_counterparts
+#: model:ir.model,name:account_financial_report_counterparts.model_account_move_line
+msgid "Journal Item"
+msgstr ""
+
+#. module: account_financial_report_counterparts
+#: model:ir.model.fields,field_description:account_financial_report_counterparts.field_account_move_line__smart_search
+#: model:ir.model.fields,field_description:account_financial_report_counterparts.field_report_account_financial_report_general_ledger__smart_search
+msgid "Smart Search"
+msgstr ""
