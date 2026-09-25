@@ -23,9 +23,9 @@
             >
                 <strong>Total time: </strong>
             </xpath>
-            <!-- Update the partial sums when grouped -->
+            <!-- Update the partial sums 'Total Time spent:' when grouped -->
             <xpath
-                expr="//div[hasclass('container_subtotal')]//table/tr/td[hasclass('text-end')]/span[@t-if='is_uom_day']"
+                expr="//div[hasclass('container_subtotal')]//table/tr[1]/td[hasclass('text-end')]/span[@t-if='is_uom_day']"
                 position="attributes"
             >
                 <attribute name="t-esc" />
@@ -36,12 +36,42 @@
                 </attribute>
             </xpath>
             <xpath
-                expr="//div[hasclass('container_subtotal')]//table/tr/td[hasclass('text-end')]/span[@t-else='']"
+                expr="//div[hasclass('container_subtotal')]//table/tr[1]/td[hasclass('text-end')]/span[@t-else='']"
                 position="attributes"
             >
                 <attribute name="t-esc" />
                 <attribute name="t-out">
                     sum(task.timesheet_ids.mapped('unit_amount_rounded'))
+                </attribute>
+            </xpath>
+            <!-- For tasks with an 'allocated_hours' -->
+            <xpath
+                expr="//div[hasclass('container_subtotal')]//table/tr//div[@name='allocated_time']"
+                position="attributes"
+            >
+                <attribute name="t-if">
+                    task.allocated_hours -
+                    sum(task.timesheet_ids.mapped('unit_amount_rounded')) &gt; 0
+                </attribute>
+            </xpath>
+            <xpath
+                expr="//div[hasclass('container_subtotal')]//table/tr//div[@name='allocated_time']//span[@t-if='is_uom_day']"
+                position="attributes"
+            >
+                <attribute name="t-esc" />
+                <attribute name="t-out">
+                    timesheets._convert_hours_to_days(
+                    task.allocated_hours - sum(task.timesheet_ids.mapped('unit_amount_rounded'))
+                    )
+                </attribute>
+            </xpath>
+            <xpath
+                expr="//div[hasclass('container_subtotal')]//table/tr//div[@name='allocated_time']//span[@t-else='']"
+                position="attributes"
+            >
+                <attribute name="t-esc" />
+                <attribute name="t-out">
+                    task.allocated_hours - sum(task.timesheet_ids.mapped('unit_amount_rounded'))
                 </attribute>
             </xpath>
         </field>
