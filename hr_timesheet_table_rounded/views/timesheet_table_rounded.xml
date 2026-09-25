@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <record model="ir.ui.view" id="hr_timesheet_table_roundedview_timesheet_table">
+    <record model="ir.ui.view" id="hr_timesheet_table_rounded">
         <field name="name">hr_timesheet_table_rounded</field>
         <field name="inherit_id" ref="hr_timesheet.timesheet_table" />
         <field name="arch" type="xml">
             <!-- oca-hooks:disable=xml-view-dangerous-replace-low-priority -->
-            <xpath expr="//thead/tr/th[@class='text-end']/span" position="replace">
-                <span>
-                    Time
-                </span>
+            <xpath expr="//thead/tr/th[hasclass('text-end')]/span" position="replace">
+                <span>Time</span>
             </xpath>
             <xpath expr="//span[@t-field='line.unit_amount']" position="attributes">
                 <attribute name="t-field" />
