@@ -10,6 +10,7 @@
     "depends": ["hr_timesheet", "sale_timesheet_rounded"],
     "data": [
         "views/portal_my_timesheets_rounded.xml",
+        "views/portal_my_task_rounded.xml",
         "views/portal_timesheet_table_rounded.xml",
     ],
     "installable": True,
