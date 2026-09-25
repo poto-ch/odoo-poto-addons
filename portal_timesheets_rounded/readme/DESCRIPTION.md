@@ -1,0 +1,1 @@
+This modules ensures that the timesheets displays in the portal only display the rounded amounts and sums.
