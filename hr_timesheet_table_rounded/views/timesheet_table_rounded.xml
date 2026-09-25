@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="hr_timesheet_table_roundedview_timesheet_table">
+        <field name="name">hr_timesheet_table_rounded</field>
+        <field name="inherit_id" ref="hr_timesheet.timesheet_table" />
+        <field name="arch" type="xml">
+            <xpath expr="//span[@t-field='line.unit_amount']" position="attributes">
+                <attribute name="t-field" />
+                <attribute name="t-out">line.unit_amount_rounded</attribute>
+            </xpath>
+
+            <xpath expr="//strong[@t-if='not is_uom_day']/t" position="attributes">
+                <attribute
+                    name="t-esc"
+                >sum([l.unit_amount_rounded for l in lines])</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

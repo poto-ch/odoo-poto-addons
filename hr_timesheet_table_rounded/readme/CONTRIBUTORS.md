@@ -1,0 +1,3 @@
+- Poto services numériques Sàrl (https://poto.ch):
+  - Ludovic Turmel \<ludovic.turmel+odoo@poto.ch\>
+  - Didier 'OdyX' Raboud \<odyx+odoo@poto.ch\>

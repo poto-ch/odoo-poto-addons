@@ -1,0 +1,1 @@
+This modules ensures that the PDF exports of timesheets only get the rounded amounts and sums.
