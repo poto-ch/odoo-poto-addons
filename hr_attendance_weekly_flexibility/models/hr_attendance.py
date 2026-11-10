@@ -43,8 +43,8 @@ class HrAttendance(models.Model):
             return super()._update_overtime(employee_attendance_dates)
 
         # Alse examine attendances from the current week
-        days_to_add = set()
         for emp, attendance_dates in employee_attendance_dates.items():
+            days_to_add = set()
             # Find the latest attendance before the first, bump to its earliest monday
 
             # Get the start of the day of the first attendance in batch, localized in
@@ -67,7 +67,7 @@ class HrAttendance(models.Model):
             )
             if not latest_attendance_before_batch:
                 # Handling the first attendance ever, don't add anything
-                break
+                continue
 
             # Localize in the employee timezone
             latest_attendance = self._get_dt_as_employee(
