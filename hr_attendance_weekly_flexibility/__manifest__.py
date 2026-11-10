@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
     "name": "Compute attendance overtime solely based on weekly hours",
-    "version": "18.0.0.2.2",
+    "version": "18.0.0.2.3",
     "author": "Poto services numériques Sàrl, Odoo Community Association (OCA)",
     "website": "https://github.com/poto-ch/odoo-poto-addons",
     "license": "AGPL-3",
